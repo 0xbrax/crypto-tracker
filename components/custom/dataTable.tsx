@@ -8,7 +8,6 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
-    ColumnFiltersState,
     getFilteredRowModel
 } from "@tanstack/react-table"
 import {Input} from "@/components/ui/input"
@@ -36,7 +35,12 @@ export function DataTable<TData, TValue>({
                                              data,
                                          }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState<any>([])
+
+    const customFilterFn = (row: any, columnId: string, filterValue: string) => {
+        if (!filterValue.length) return row
+        return row.original.name?.toLowerCase().includes(filterValue.toLowerCase()) || row.original.symbol?.toLowerCase().includes(filterValue.toLowerCase())
+    }
 
     const table = useReactTable({
         data,
@@ -44,11 +48,12 @@ export function DataTable<TData, TValue>({
         getCoreRowModel: getCoreRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
-        onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
         getFilteredRowModel: getFilteredRowModel(),
+        globalFilterFn: customFilterFn, //'includesString',
         state: {
             sorting,
-            columnFilters
+            globalFilter
         },
     })
 
@@ -68,11 +73,9 @@ export function DataTable<TData, TValue>({
             />
 
             {isSearchActive && <Input
-                placeholder="Search symbol..."
-                value={(table.getColumn("symbol")?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                    table.getColumn("symbol")?.setFilterValue(event.target.value)
-                }
+                placeholder="Search..."
+                value={globalFilter}
+                onChange={e => table.setGlobalFilter(String(e.target.value))}
                 className="w-full"
             />}
         </div>
